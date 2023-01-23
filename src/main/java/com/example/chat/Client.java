@@ -1,23 +1,25 @@
 package com.example.chat;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) {
         try(Socket client = new Socket("localhost", 8080);
-            PrintWriter writer = new PrintWriter(client.getOutputStream(), true);
             Scanner scanner = new Scanner(System.in)) {
+            String nickName;
+            System.out.println("Введите nickName :");
+            nickName = scanner.nextLine();
+            ObjectOutputStream outputStream = new ObjectOutputStream(client.getOutputStream());
 
             new MessageReader(client).start();
 
             while(true) {
-                String message = scanner.nextLine();
-                writer.println(message);
+                String text = scanner.nextLine();
+                Message message = new Message(text,nickName);
+                outputStream.writeObject(message);
+                outputStream.flush();
             }
         } catch(IOException ex) {
             ex.printStackTrace();
@@ -33,15 +35,16 @@ public class Client {
 
         @Override
         public void run() {
-            try(BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
+            try(ObjectInputStream reader = new ObjectInputStream(client.getInputStream())) {
                 while (true) {
-                    String message = reader.readLine();
-                    System.out.println("Anonymous: " + message);
+                    Message message = (Message) reader.readObject();
+                    System.out.println("Anonymous: " + message.toString());
                 }
             } catch(IOException ex) {
                 ex.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
     }
-
 }

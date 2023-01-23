@@ -1,9 +1,6 @@
 package com.example.chat;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -18,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class Server {
     private static final List<Socket> clients = new ArrayList<>();
-    private static final List<PrintWriter> writers = new ArrayList<>();
+    private static final List<ObjectOutputStream> writers = new ArrayList<>();
 
     public static void main(String[] args) {
         try(ServerSocket server = new ServerSocket(8080)) {
@@ -28,7 +25,7 @@ public class Server {
 
                 System.out.printf("Подключился %d-й клиент!\n", clients.size() + 1);
                 clients.add(client);
-                writers.add(new PrintWriter(client.getOutputStream(), true));
+                writers.add(new ObjectOutputStream(client.getOutputStream()));
                 //Запустить новый поток, связанный с клиентом.
                 new MessageReciever(client).start();
             }
@@ -47,17 +44,19 @@ public class Server {
         @Override
         public void run() {
             //Считываем сообщения от клиента и рассылаем его другим клиентам
-            try(BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()))) {
+            try(ObjectInputStream reader = new ObjectInputStream(client.getInputStream())) {
                 while(true) {
-                    String message = reader.readLine();
-                    System.out.println(Thread.currentThread().getName() + " : " + message);
-                    for(PrintWriter writer : writers) {
-                        writer.println(message);
+                    Message message = (Message) reader.readObject();
+                    System.out.println(Thread.currentThread().getName() + " : " + message.toString());
+                    for(ObjectOutputStream writer : writers) {
+                        writer.writeObject(message);
+                        writer.flush();
                     }
                 }
-
             } catch(IOException ex) {
                 ex.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }
     }
