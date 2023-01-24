@@ -38,7 +38,7 @@ public class Client {
             try(ObjectInputStream reader = new ObjectInputStream(client.getInputStream())) {
                 while (true) {
                     Message message = (Message) reader.readObject();
-                    System.out.println("Anonymous: " + message.toString());
+                    System.out.println("Anonymous: " + message);
                 }
             } catch(IOException ex) {
                 ex.printStackTrace();

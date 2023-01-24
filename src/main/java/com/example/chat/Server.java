@@ -47,7 +47,7 @@ public class Server {
             try(ObjectInputStream reader = new ObjectInputStream(client.getInputStream())) {
                 while(true) {
                     Message message = (Message) reader.readObject();
-                    System.out.println(Thread.currentThread().getName() + " : " + message.toString());
+                    System.out.println(Thread.currentThread().getName() + " : " + message);
                     for(ObjectOutputStream writer : writers) {
                         writer.writeObject(message);
                         writer.flush();
